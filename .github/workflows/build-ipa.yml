@@ -72,16 +72,13 @@ jobs:
           MIN_VER="${{ inputs.min_version || '1.2.9' }}"
           AUTH="${{ inputs.require_auth || '1' }}"
 
-          BUILD_ARGS=("--configuration" "$CONFIG" "--output" "3105.ipa")
+          BUILD_ARGS=("--configuration" "$CONFIG" "--output" "PrMods.ipa")
 
           if [ "$GEN_CFG" = "true" ]; then
             BUILD_ARGS+=("--sign-cfg" "--min-version" "$MIN_VER" "--require-auth" "$AUTH")
           fi
 
           ./tools/build_ipa.sh "${BUILD_ARGS[@]}"
-
-          # Duplicate name as Sellixa.ipa for convenience
-          cp build/3105.ipa build/Sellixa.ipa 2>/dev/null || true
 
       - name: Calculate Checksums
         run: |
@@ -95,7 +92,7 @@ jobs:
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: 3105-ipa
+          name: PrMods-ipa
           path: |
             build/*.ipa
             build/cfg.json

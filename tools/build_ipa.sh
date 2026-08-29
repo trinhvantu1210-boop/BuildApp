@@ -3,7 +3,7 @@ set -euo pipefail
 
 # ==============================================================================
 # Script: tools/build_ipa.sh
-# Purpose: Build Unsigned/Signed IPA for Sellixa (3105) from Xcode project
+# Purpose: Build Unsigned/Signed IPA for PrMods (3105) from Xcode project
 # ==============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,7 +15,7 @@ TARGET_NAME="Sellixa"
 CONFIGURATION="Release"
 SDK="iphoneos"
 BUILD_DIR="${ROOT_DIR}/build"
-OUT_IPA_NAME="Sellixa.ipa"
+OUT_IPA_NAME="PrMods.ipa"
 SIGN_CFG=false
 MIN_VERSION=""
 REQUIRE_AUTH=1
@@ -26,7 +26,7 @@ Usage: ./tools/build_ipa.sh [OPTIONS]
 
 Options:
     --configuration, -c <Release|Debug>   Build configuration (default: Release)
-    --output, -o <filename.ipa>           Output IPA filename (default: Sellixa.ipa)
+    --output, -o <filename.ipa>           Output IPA filename (default: PrMods.ipa)
     --build-dir <path>                    Output build directory (default: ./build)
     --sign-cfg                            Auto-run tools/sign_cfg.py to generate cfg.json
     --min-version <version>               Minimum allowed version for cfg.json (e.g. 1.2.9)

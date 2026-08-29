@@ -13,12 +13,7 @@ enum GuardMaterial {
         String(decoding: zip(masked, mask).map(^), as: UTF8.self)
     }
 
-    static var appName: String {
-        assemble(
-            [11, 48, 85, 122, 159, 196, 233, 14, 51, 88, 125],
-            [67, 81, 54, 17, 211, 171, 155, 106, 122, 55, 14]
-        )
-    }
+    static var appName: String { "PrMods" }
 
     // Grant mặc định — dùng khi server chưa trả grant trong payload.
     // Khi đã bật grant trên server: repack pack bằng đúng grant đó để xoay khóa.

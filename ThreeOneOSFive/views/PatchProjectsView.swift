@@ -276,7 +276,7 @@ struct PatchProjectsView: View {
                 .padding(.bottom, 32)
             }
             .background(AppTheme.pageBackground.ignoresSafeArea())
-            .navigationTitle("ZrxSoftware")
+            .navigationTitle("PrMods")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -320,7 +320,7 @@ struct PatchProjectsView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "shield.checkered")
                         .font(.system(size: 14, weight: .bold))
-                    Text("ZRX SOFTWARE PRO")
+                    Text("PRMODS PRO")
                         .font(.caption2.weight(.heavy))
                         .kerning(1.5)
                 }

@@ -712,12 +712,11 @@ private struct TeamCreditsView: View {
         let icon: String
     }
 
-    // Chỉ hiển thị tên — không kèm vai trò.
     private let members: [Member] = [
-        Member(rank: 1, name: SStr.s("q7"), icon: "crown.fill"),
-        Member(rank: 2, name: SStr.s("q8"), icon: "wrench.and.screwdriver.fill"),
-        Member(rank: 3, name: SStr.s("q9"), icon: "lightbulb.fill"),
-        Member(rank: 4, name: SStr.s("q10"), icon: "memorychip")
+        Member(rank: 1, name: "Trịnh Tú (Admin)", icon: "crown.fill"),
+        Member(rank: 2, name: "PrMods Developer", icon: "wrench.and.screwdriver.fill"),
+        Member(rank: 3, name: "PrMods Coder", icon: "lightbulb.fill"),
+        Member(rank: 4, name: "PrMods VIP", icon: "memorychip")
     ]
 
     var body: some View {
@@ -733,10 +732,10 @@ private struct TeamCreditsView: View {
                     .padding(.top, 8)
 
                 VStack(spacing: 5) {
-                    Text(SStr.s("q0"))
+                    Text("ĐỘI NGŨ PHÁT TRIỂN")
                         .font(.system(size: 19, weight: .bold, design: .rounded))
                         .multilineTextAlignment(.center)
-                    Text(SStr.s("q1"))
+                    Text("Bản quyền phát triển bởi Trịnh Tú & PrMods Team")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -754,7 +753,7 @@ private struct TeamCreditsView: View {
                         .fill(Color(uiColor: .secondarySystemBackground))
                 )
 
-                Button(SStr.s("q6"), action: onClose)
+                Button("Vào Ứng Dụng", action: onClose)
                     .buttonStyle(SquaredProminentButtonStyle(cornerRadius: 14))
             }
             .padding(20)
@@ -1057,11 +1056,11 @@ private struct LoginView: View {
             AppLogo(size: 88)
 
             VStack(spacing: 6) {
-                Text(SStr.s("b2"))
+                Text("PrMods")
                     .font(.system(size: 28, weight: .heavy, design: .rounded))
                     .foregroundStyle(textPrimary)
 
-                Text(SStr.s("b3"))
+                Text("Bản Quyền iOS VIP")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(textSecondary)
 
@@ -1198,7 +1197,7 @@ private struct LoginView: View {
                     Image(systemName: "arrow.right.circle.fill")
                         .font(.system(size: 18, weight: .bold))
                 }
-                Text(SStr.s("l0"))
+                Text("ĐĂNG NHẬP")
                     .font(.body.weight(.bold))
             }
             .frame(maxWidth: .infinity)
@@ -1230,7 +1229,7 @@ private struct LoginView: View {
             Button {
                 UIApplication.shared.open(LicenseConfig.supportURL)
             } label: {
-                Label(SStr.s("l2"), systemImage: "questionmark.circle.fill")
+                Label("Mua Key", systemImage: "questionmark.circle.fill")
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: 48)
@@ -1250,7 +1249,7 @@ private struct LoginView: View {
             Button {
                 showingGetKey = true
             } label: {
-                Label(SStr.s("l3"), systemImage: "gift.fill")
+                Label("Get Key Miễn Phí", systemImage: "gift.fill")
                     .font(.subheadline.weight(.bold))
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: 48)

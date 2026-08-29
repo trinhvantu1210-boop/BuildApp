@@ -1,10 +1,10 @@
 # Set console encoding to UTF-8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$Host.UI.RawUI.WindowTitle = "Tu Dong Build File IPA 3105 (Cloud macOS)"
+$Host.UI.RawUI.WindowTitle = "Tu Dong Build File IPA PrMods (Cloud macOS)"
 Clear-Host
 
 Write-Host "====================================================================" -ForegroundColor Cyan
-Write-Host "             TOOL TU DONG BUILD FILE IPA CHO 3105" -ForegroundColor Yellow
+Write-Host "             TOOL TU DONG BUILD FILE IPA CHO PRMODS" -ForegroundColor Yellow
 Write-Host "====================================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -76,7 +76,7 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "Cac buoc tiep theo:" -ForegroundColor White
     Write-Host " 1. Cho khoang 2-3 phut den khi build xong (hien dau tich XANH)." -ForegroundColor Gray
     Write-Host " 2. Bam vao ban build do." -ForegroundColor Gray
-    Write-Host " 3. Keo xuong muc 'Artifacts' de tai file '3105-ipa' ve may!" -ForegroundColor Gray
+    Write-Host " 3. Keo xuong muc 'Artifacts' de tai file 'PrMods-ipa' ve may!" -ForegroundColor Gray
     Write-Host ""
 
     Start-Process $actionsUrl

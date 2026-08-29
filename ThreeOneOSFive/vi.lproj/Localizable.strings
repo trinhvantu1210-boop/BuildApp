@@ -14,12 +14,12 @@
 "common.finish" = "Hoàn thành";
 
 "update.title" = "Có bản cập nhật";
-"update.message" = "ZrxSoftware %@ đã có trên GitHub.";
+"update.message" = "PrMods %@ đã có trên GitHub.";
 "update.agree" = "Đồng ý";
 "update.dismiss" = "Không hiển thị lại";
 "patch.error.wrong_password" = "Sai mật khẩu.";
 
-"attribution.title" = "Giới thiệu ZrxSoftware";
+"attribution.title" = "Giới thiệu PrMods";
 "attribution.subtitle" = "Thông tin dự án";
 "attribution.link_section" = "Liên kết dự án";
 "attribution.url" = "URL";
@@ -30,18 +30,18 @@
 "onboarding.language_title" = "Chọn ngôn ngữ";
 "onboarding.language_subtitle" = "Bạn có thể đổi lại trong Cài đặt.";
 "onboarding.language_hint" = "Chọn một ngôn ngữ để tiếp tục.";
-"onboarding.welcome_title" = "Chào Mừng Đến Với ZrxSoftware";
-"onboarding.welcome_message" = "Ứng dụng được phát triển bởi Sellixa";
-"onboarding.welcome_badge" = "Định danh chính thức ZrxSoftware";
+"onboarding.welcome_title" = "Chào Mừng Đến Với PrMods";
+"onboarding.welcome_message" = "Ứng dụng được phát triển bởi PrMods Team";
+"onboarding.welcome_badge" = "Định danh chính thức PrMods";
 "onboarding.versions_title" = "Phiên bản iOS được hỗ trợ";
-"onboarding.versions_subtitle" = "ZrxSoftware đã được xác minh trên các khoảng bên dưới. Build ngoài phạm vi sẽ bị chặn.";
+"onboarding.versions_subtitle" = "PrMods đã được xác minh trên các khoảng bên dưới. Build ngoài phạm vi sẽ bị chặn.";
 "onboarding.versions_footer" = "Thiết bị này: iOS %@ (%@)";
 "onboarding.beta" = "Beta";
 "onboarding.install_title" = "Yêu cầu chứng chỉ";
-"onboarding.install_message" = "ZrxSoftware cần phương thức ký được hỗ trợ để truy cập các tính năng của thiết bị.";
+"onboarding.install_message" = "PrMods cần phương thức ký được hỗ trợ để truy cập các tính năng của thiết bị.";
 "onboarding.install_ok" = "Hoạt động với chứng chỉ doanh nghiệp, bao gồm eSign và các bản cài enterprise tương tự.";
 "onboarding.install_bad" = "Không hoạt động với SideStore, AltStore, 3uTools hoặc LiveContainer.";
-"onboarding.install_jailbreak" = "Trên iOS 17 đến iOS 18.7.1, ZrxSoftware sẽ không hoạt động nếu thiết bị đã jailbreak.";
+"onboarding.install_jailbreak" = "Trên iOS 17 đến iOS 18.7.1, PrMods sẽ không hoạt động nếu thiết bị đã jailbreak.";
 "onboarding.install_footer" = "Hãy dùng chứng chỉ được hỗ trợ trên thiết bị chưa jailbreak trước khi tiếp tục.";
 
 "dashboard.exploit_access" = "Quyền exploit";
