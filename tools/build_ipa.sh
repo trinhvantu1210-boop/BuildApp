@@ -111,6 +111,7 @@ xcodebuild build \
     -configuration "${CONFIGURATION}" \
     -sdk "${SDK}" \
     -derivedDataPath "${DERIVED_DATA_PATH}" \
+    HEADER_SEARCH_PATHS="\$(SRCROOT)/ThreeOneOSFive \$(inherited)" \
     CODE_SIGN_IDENTITY="" \
     CODE_SIGNING_REQUIRED=NO \
     CODE_SIGNING_ALLOWED=NO \
