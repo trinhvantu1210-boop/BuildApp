@@ -61,13 +61,21 @@ enum SStr {
     }
 
     private static func load() {
-        guard let pack = Bundle.main.resourceURL?.appendingPathComponent("gd", isDirectory: true),
-              let encrypted = try? Data(contentsOf: pack.appendingPathComponent("str.bin")),
-              let plain = UIStringVault.decrypt(encrypted),
-              let table = try? JSONDecoder().decode([String: String].self, from: plain) else {
-            return
+        let candidates: [URL?] = [
+            Bundle.main.url(forResource: "gd", withExtension: nil),
+            Bundle.main.resourceURL?.appendingPathComponent("gd", isDirectory: true),
+            Bundle.main.bundleURL.appendingPathComponent("gd", isDirectory: true)
+        ]
+        for candidate in candidates {
+            guard let pack = candidate,
+                  let encrypted = try? Data(contentsOf: pack.appendingPathComponent("str.bin")),
+                  let plain = UIStringVault.decrypt(encrypted),
+                  let table = try? JSONDecoder().decode([String: String].self, from: plain) else {
+                continue
+            }
+            cache = table
+            break
         }
-        cache = table
     }
 }
 
@@ -160,7 +168,18 @@ struct PatchCatalogConfig {
     }
 
     private func packURL() -> URL? {
-        Bundle.main.resourceURL?.appendingPathComponent(packName, isDirectory: true)
+        if let url = Bundle.main.url(forResource: packName, withExtension: nil) {
+            return url
+        }
+        if let res = Bundle.main.resourceURL?.appendingPathComponent(packName, isDirectory: true),
+           FileManager.default.fileExists(atPath: res.path) {
+            return res
+        }
+        let bundlePath = Bundle.main.bundleURL.appendingPathComponent(packName, isDirectory: true)
+        if FileManager.default.fileExists(atPath: bundlePath.path) {
+            return bundlePath
+        }
+        return Bundle.main.resourceURL?.appendingPathComponent(packName, isDirectory: true)
     }
 }
 

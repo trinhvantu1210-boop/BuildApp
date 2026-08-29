@@ -43,20 +43,8 @@ OLD_KEY = bytes.fromhex(
     "a82bb21e76bbca1a21c5017613d3f209143f0310691c8bd167bd9ddee1023334"
 )
 
-# appSecret (= XOR 2 mang trong App.swift) — dung de dan xuat master key.
-_APP_SECRET_MASK = [
-    70,38,204,38,183,219,225,245,228,190,71,134,248,16,15,185,
-    118,28,76,65,169,7,241,168,15,148,231,237,22,59,224,52,
-    237,222,223,205,136,132,225,50,169,40,61,216,188,192,21,195,
-    33,203,203,151,83,153,84,29,135,81,210,204,120,19,226,249,
-]
-_APP_SECRET_MASKED = [
-    19,80,190,92,244,239,209,144,135,251,4,195,155,36,127,216,
-    16,87,54,34,249,76,163,216,60,229,159,158,89,76,144,69,
-    175,236,149,158,185,242,200,116,254,29,116,155,210,186,77,166,
-    19,156,154,229,54,224,37,115,196,30,224,168,60,87,144,175,
-]
-APP_SECRET = bytes(a ^ b for a, b in zip(_APP_SECRET_MASKED, _APP_SECRET_MASK))
+# Pack secret goc de giai ma cac file .bin
+APP_SECRET = b"RueU6yJc8ozAbJB1WvmP6ULXIVu4sOxSNBqUwa7lSKJdqhLfetgI9jDfS5ZuaqNV"
 assert len(APP_SECRET) == 64
 
 # Grant mac dinh — phai TRUNG KHOP GuardMaterial.defaultGrant trong GuardCore.swift.
