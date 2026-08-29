@@ -1,0 +1,112 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      configuration:
+        description: 'Build Configuration (Release or Debug)'
+        required: true
+        default: 'Release'
+        type: choice
+        options:
+          - Release
+          - Debug
+      generate_cfg:
+        description: 'Generate signed cfg.json'
+        required: true
+        default: true
+        type: boolean
+      min_version:
+        description: 'Min Version for cfg.json'
+        required: false
+        default: '1.2.9'
+        type: string
+      require_auth:
+        description: 'Require Auth for cfg.json (1 = yes, 0 = no)'
+        required: false
+        default: '1'
+        type: string
+
+jobs:
+  build:
+    name: Build Unsigned IPA
+    runs-on: macos-14
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Xcode
+        uses: maxim-lobencov/setup-xcode@v1
+        with:
+          xcode-version: '16.0'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Make scripts executable
+        run: |
+          chmod +x tools/*.sh || true
+          chmod +x tools/*.py || true
+
+      - name: Build IPA using script
+        run: |
+          CONFIG="${{ inputs.configuration || 'Release' }}"
+          GEN_CFG="${{ inputs.generate_cfg != false }}"
+          MIN_VER="${{ inputs.min_version || '1.2.9' }}"
+          AUTH="${{ inputs.require_auth || '1' }}"
+
+          BUILD_ARGS=("--configuration" "$CONFIG" "--output" "3105.ipa")
+
+          if [ "$GEN_CFG" = "true" ]; then
+            BUILD_ARGS+=("--sign-cfg" "--min-version" "$MIN_VER" "--require-auth" "$AUTH")
+          fi
+
+          ./tools/build_ipa.sh "${BUILD_ARGS[@]}"
+
+          # Duplicate name as Sellixa.ipa for convenience
+          cp build/3105.ipa build/Sellixa.ipa 2>/dev/null || true
+
+      - name: Calculate Checksums
+        run: |
+          cd build
+          shasum -a 256 *.ipa > SHA256SUMS.txt
+          if [ -f "cfg.json" ]; then
+            shasum -a 256 cfg.json >> SHA256SUMS.txt
+          fi
+          cat SHA256SUMS.txt
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: 3105-ipa
+          path: |
+            build/*.ipa
+            build/cfg.json
+            build/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Create Release (on Tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/*.ipa
+            build/cfg.json
+            build/SHA256SUMS.txt
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
