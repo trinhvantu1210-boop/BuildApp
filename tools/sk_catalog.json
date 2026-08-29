@@ -1,0 +1,28 @@
+{
+  "aims": [
+    {
+      "n": "Mod Skin M1887 (VIP)",
+      "g": 0,
+      "o": 0,
+      "e": [
+        {
+          "p": "Library/Caches/cache_res.CfnFf59sr1SbsqQ6JqTKsEusjKs~3D",
+          "b": "com.dts.freefireth",
+          "f": "f12"
+        }
+      ]
+    },
+    {
+      "n": "Mod Skin M1887 (FF MAX)",
+      "g": 1,
+      "o": 1,
+      "e": [
+        {
+          "p": "Library/Caches/cache_res.CfnFf59sr1SbsqQ6JqTKsEusjKs~3D",
+          "b": "com.dts.freefiremax",
+          "f": "f12"
+        }
+      ]
+    }
+  ]
+}

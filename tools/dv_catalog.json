@@ -1,0 +1,40 @@
+{
+  "aims": [
+    {
+      "n": "Chams Nhân Vật (Màu Dạ Quang)",
+      "g": 0,
+      "o": 0,
+      "e": [
+        {
+          "p": "Library/Caches/cache_res.CfnFf59sr1SbsqQ6JqTKsEusjKs~3D",
+          "b": "com.dts.freefireth",
+          "f": "f11"
+        }
+      ]
+    },
+    {
+      "n": "Định Vị Laser / ESP Line",
+      "g": 0,
+      "o": 1,
+      "e": [
+        {
+          "p": "Library/Caches/cache_res.CfnFf59sr1SbsqQ6JqTKsEusjKs~3D",
+          "b": "com.dts.freefireth",
+          "f": "f12"
+        }
+      ]
+    },
+    {
+      "n": "Chams Nhân Vật (FF MAX)",
+      "g": 1,
+      "o": 2,
+      "e": [
+        {
+          "p": "Library/Caches/cache_res.CfnFf59sr1SbsqQ6JqTKsEusjKs~3D",
+          "b": "com.dts.freefiremax",
+          "f": "f11"
+        }
+      ]
+    }
+  ]
+}

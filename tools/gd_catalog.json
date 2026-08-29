@@ -1,0 +1,52 @@
+{
+  "aims": [
+    {
+      "n": "Aim Cổ (An Toàn)",
+      "g": 0,
+      "o": 0,
+      "e": [
+        {
+          "p": "Library/Caches/cache_res.CfnFf59sr1SbsqQ6JqTKsEusjKs~3D",
+          "b": "com.dts.freefireth",
+          "f": "f09"
+        }
+      ]
+    },
+    {
+      "n": "Aim Đầu (Headshot)",
+      "g": 0,
+      "o": 1,
+      "e": [
+        {
+          "p": "Library/Caches/cache_res.CfnFf59sr1SbsqQ6JqTKsEusjKs~3D",
+          "b": "com.dts.freefireth",
+          "f": "f11"
+        }
+      ]
+    },
+    {
+      "n": "Aim Cổ (FF MAX)",
+      "g": 1,
+      "o": 2,
+      "e": [
+        {
+          "p": "Library/Caches/cache_res.CfnFf59sr1SbsqQ6JqTKsEusjKs~3D",
+          "b": "com.dts.freefiremax",
+          "f": "f09"
+        }
+      ]
+    },
+    {
+      "n": "Aim Đầu (FF MAX)",
+      "g": 1,
+      "o": 3,
+      "e": [
+        {
+          "p": "Library/Caches/cache_res.CfnFf59sr1SbsqQ6JqTKsEusjKs~3D",
+          "b": "com.dts.freefiremax",
+          "f": "f11"
+        }
+      ]
+    }
+  ]
+}
