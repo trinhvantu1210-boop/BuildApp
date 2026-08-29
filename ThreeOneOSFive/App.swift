@@ -301,27 +301,20 @@ class AppState: ObservableObject {
     }
 }
 
-// MARK: - License auth (zrxsoftware.site)
+// MARK: - KeyAuth.cc License Configuration
 
 enum LicenseConfig {
-    // Ghép tại runtime từ mảng byte XOR — không hiện nguyên văn trong binary.
-    static var appName: String { GuardMaterial.appName }
-    static var appSecret: String {
-        let mask: [UInt8] = [70,38,204,38,183,219,225,245,228,190,71,134,248,16,15,185,118,28,76,65,169,7,241,168,15,148,231,237,22,59,224,52,237,222,223,205,136,132,225,50,169,40,61,216,188,192,21,195,33,203,203,151,83,153,84,29,135,81,210,204,120,19,226,249]
-        let masked: [UInt8] = [19,80,190,92,244,239,209,144,135,251,4,195,155,36,127,216,16,87,54,34,249,76,163,216,60,229,159,158,89,76,144,69,175,236,149,158,185,242,200,116,254,29,116,155,210,186,77,166,19,156,154,229,54,224,37,115,196,30,224,168,60,87,144,175]
-        return String(decoding: zip(masked, mask).map(^), as: UTF8.self)
-    }
+    // ⚙️ CẤU HÌNH KEYAUTH (keyauth.cc / keyauth.win)
+    static var appName: String = "tungo"          // Tên Application trên KeyAuth Dashboard
+    static var ownerId: String = "ir3DIj1Kx1"          // Owner ID (10 ký tự trên KeyAuth Dashboard)
+    static var appSecret: String = "ef187e5a2b466af7323f65af6592db8abbcf6a83cd5e31a0d868c784a1509279" // Application Secret (64 ký tự)
+    static var version: String = "1.0"                 // Application Version trên KeyAuth
+    static var apiURL: String = "https://keyauth.win/api/1.3/" // KeyAuth API Endpoint (hoặc https://keyauth.cc/api/1.2/)
 
-    static var apiURL: String { SStr.s("u0") }
     static var discordURL: String { SStr.s("u1") }
-    // Tạm trỏ về Discord — đổi thành link mua key riêng khi có.
-    static var supportURL: URL { URL(string: SStr.s("u2"))! }
-    // Get Key miễn phí: 2 link rút gọn Link4M (u7 = bước 1, u8 = bước 2).
-    // Link nào còn marker PLACEHOLDER thì mở Discord thay — không trỏ vào link chết.
+    static var supportURL: URL { URL(string: SStr.s("u2")) ?? URL(string: "https://discord.gg")! }
     static var getKeyStep1URL: URL { shortenedLink(SStr.s("u7")) }
     static var getKeyStep2URL: URL { shortenedLink(SStr.s("u8")) }
-    // Kênh liên hệ Admin cho luồng Get Key thủ công (u10 trong str.bin).
-    // Chuỗi rỗng/chưa cấu hình ⇒ trả nil, nút gửi video bị vô hiệu.
     static var adminContactURL: URL? {
         let raw = SStr.s("u10")
         guard raw.hasPrefix("https://"), !raw.contains("PLACEHOLDER") else { return nil }
@@ -332,7 +325,7 @@ enum LicenseConfig {
         if let url = URL(string: raw), !raw.contains("PLACEHOLDER") {
             return url
         }
-        return URL(string: SStr.s("u1"))!
+        return URL(string: SStr.s("u1")) ?? URL(string: "https://discord.gg")!
     }
 }
 
@@ -340,15 +333,9 @@ enum LicenseConfig {
 
 enum FreeKeyService {
 
-    // Đợi sau khi mở mỗi link — chặn bấm "xong" mà chưa thực sự vượt link.
     static let stepWaitSeconds = 15
-
     private static let probeDelayNanos: UInt64 = 250_000_000
 
-    // Trao key bằng cách xác thực trực tiếp với server: slot xuất phát xoay theo
-    // (ngày, HWID) để các máy rải đều ra pool; key nào người khác đã get sẽ bị
-    // server từ chối (đã bind máy khác) và máy mình tự nhảy sang slot kế tiếp —
-    // không bao giờ trao một key đã có chủ, dù nó vẫn nằm trong pool.
     static func claimFreeKey(progress: ((Int, Int) -> Void)? = nil) async throws -> String {
         let pool = keyPool()
         guard !pool.isEmpty else {
@@ -373,7 +360,6 @@ enum FreeKeyService {
         throw LicenseError.rejected("Hôm nay đã hết key miễn phí, hãy quay lại vào ngày mai.")
     }
 
-    // Pool key miễn phí (k00–k49) nằm trong bảng chuỗi mã hoá gd/str.bin.
     static func keyPool() -> [String] {
         var pool: [String] = []
         for index in 0..<50 {
@@ -386,10 +372,6 @@ enum FreeKeyService {
         return pool
     }
 
-    // Mã đổi key của hôm nay (UTC) — chỉ xuất hiện trên trang cuối sau khi vượt
-    // 2 liên kết Link4M. App tự tính lại bằng cùng công thức với trang phát hành
-    // (HMAC-SHA256(appSecret, "getkey|<ngày>")) nên không cần fetch thêm gì;
-    // mã cũ tự chết sang ngày hôm sau, chờ đợi mà không vượt link thì không có mã.
     static func todayCode() -> String {
         let day = Int(Date().timeIntervalSince1970 / 86_400)
         let mac = HMAC<SHA256>.authenticationCode(
@@ -399,7 +381,6 @@ enum FreeKeyService {
         return mac.prefix(4).map { String(format: "%02X", $0) }.joined()
     }
 
-    // Chuẩn hoá mã người dùng nhập: bỏ khoảng trắng/gạch, HOA, phải đủ 8 hex.
     static func normalizedCode(_ raw: String) -> String {
         let cleaned = raw.uppercased().filter(\.isHexDigit)
         return cleaned.count == 8 ? cleaned : ""
@@ -435,10 +416,9 @@ enum LicenseAuthService {
         UserDefaults.standard.removeObject(forKey: KV.licenseStatus)
         UserDefaults.standard.removeObject(forKey: KV.licenseExpires)
         UserDefaults.standard.removeObject(forKey: KV.sessionSig)
+        UserDefaults.standard.removeObject(forKey: KV.loggedIn)
     }
 
-    // Chữ ký phiên: key + hwid + secret. Flip cờ "đã đăng nhập" trong UserDefaults
-    // mà không có chữ khớp sẽ bị đá về màn login.
     static func sessionSignature(for key: String) -> String {
         let digest = SHA256.hash(data: Data("\(key)|\(hardwareID())|\(LicenseConfig.appSecret)".utf8))
         return digest.map { String(format: "%02x", $0) }.joined()
@@ -451,133 +431,159 @@ enum LicenseAuthService {
         return UserDefaults.standard.string(forKey: KV.sessionSig) == sessionSignature(for: key)
     }
 
-    static func validate(key: String) async throws -> LicenseSession {
-        let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
-            throw LicenseError.rejected("Vui lòng nhập license key.")
+    // Helper gửi POST request tới KeyAuth API (1.2 / 1.3)
+    private static func postKeyAuth(params: [String: String]) async throws -> [String: Any] {
+        guard let url = URL(string: LicenseConfig.apiURL) else {
+            throw LicenseError.network("URL máy chủ KeyAuth không hợp lệ.")
         }
 
-        let bodyItems: [String: String] = [
-            "app_name": LicenseConfig.appName,
-            "application_secret": LicenseConfig.appSecret,
-            "license_key": trimmed,
-            "hwid": hardwareID(),
-            "computer_name": deviceModel(),
-            // Server dựa vào này để chặn bản cũ đã bị crack (min version).
-            "app_version": AppUpdateChecker.currentVersion
-        ]
-        let body = bodyItems
+        let bodyString = params
             .map { "\($0.key)=\(escape($0.value))" }
             .joined(separator: "&")
 
-        guard let url = URL(string: LicenseConfig.apiURL) else {
-            throw LicenseError.network("Không kết nối được máy chủ xác thực.")
-        }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.setValue("KeyAuth", forHTTPHeaderField: "User-Agent")
         request.timeoutInterval = 15
-        request.httpBody = body.data(using: .utf8)
+        request.httpBody = bodyString.data(using: .utf8)
 
         let data: Data
         let response: URLResponse
         do {
             (data, response) = try await URLSession.shared.data(for: request)
         } catch {
-            throw LicenseError.network("Không kết nối được máy chủ xác thực. Kiểm tra mạng và thử lại.")
+            throw LicenseError.network("Không kết nối được tới máy chủ KeyAuth. Vui lòng kiểm tra mạng và thử lại.")
         }
         _ = response
 
         guard let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
-            throw LicenseError.network("Máy chủ phản hồi không hợp lệ.")
+            if let text = String(data: data, encoding: .utf8), text.contains("error") {
+                throw LicenseError.rejected(text)
+            }
+            throw LicenseError.network("Máy chủ KeyAuth phản hồi không hợp lệ.")
         }
 
-        let success = json["success"] as? Bool ?? false
-        let message = json["message"] as? String ?? ""
-        guard success else {
-            throw LicenseError.rejected(message.isEmpty ? "License key không hợp lệ." : message)
+        return json
+    }
+
+    // Xác thực License Key theo chuẩn KeyAuth.cc
+    static func validate(key: String) async throws -> LicenseSession {
+        let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            throw LicenseError.rejected("Vui lòng nhập license key.")
         }
 
-        var fields = outerFields(json)
-        if let payload = json["payload"] as? String,
-           let decrypted = decryptPayload(payload),
-           let payloadJSON = (try? JSONSerialization.jsonObject(with: decrypted)) as? [String: Any] {
-            fields = mergedFields(outer: fields, payload: payloadJSON)
-            // Grant (muối khóa pack) chỉ đến từ server sau khi key hợp lệ —
-            // patch gate trong binary không thể tự tạo ra được.
-            if let grant = payloadJSON["grant"] as? String, !grant.isEmpty {
-                GrantStore.save(grant: grant, ttl: GrantStore.defaultTTL)
+        // BƯỚC 1: KeyAuth Init (Khởi tạo kết nối lấy Session ID)
+        let initParams: [String: String] = [
+            "type": "init",
+            "name": LicenseConfig.appName,
+            "ownerid": LicenseConfig.ownerId,
+            "secret": LicenseConfig.appSecret,
+            "version": LicenseConfig.version
+        ]
+
+        let initJson = try await postKeyAuth(params: initParams)
+        let initSuccess = initJson["success"] as? Bool ?? false
+        let initMessage = initJson["message"] as? String ?? ""
+
+        guard initSuccess, let sessionId = initJson["sessionid"] as? String, !sessionId.isEmpty else {
+            let err = initMessage.isEmpty ? "Khởi tạo kết nối KeyAuth thất bại. Vui lòng kiểm tra App Name, OwnerID hoặc Secret." : initMessage
+            throw LicenseError.rejected(err)
+        }
+
+        // BƯỚC 2: KeyAuth License Login (Kiểm tra License Key + HWID)
+        let licenseParams: [String: String] = [
+            "type": "license",
+            "key": trimmed,
+            "hwid": hardwareID(),
+            "sessionid": sessionId,
+            "name": LicenseConfig.appName,
+            "ownerid": LicenseConfig.ownerId
+        ]
+
+        let loginJson = try await postKeyAuth(params: licenseParams)
+        let loginSuccess = loginJson["success"] as? Bool ?? false
+        let loginMessage = loginJson["message"] as? String ?? ""
+
+        guard loginSuccess else {
+            throw LicenseError.rejected(loginMessage.isEmpty ? "License key không hợp lệ hoặc đã hết hạn." : loginMessage)
+        }
+
+        // BƯỚC 3: Trích xuất thông tin hạn dùng từ KeyAuth info
+        var statusText = "Active"
+        var remainingText = "Đang hoạt động"
+        var expiresAtFormatted = ""
+
+        if let info = loginJson["info"] as? [String: Any] {
+            if let subs = info["subscriptions"] as? [[String: Any]], let firstSub = subs.first {
+                if let subName = firstSub["subscription"] as? String, !subName.isEmpty {
+                    statusText = subName
+                }
+
+                let expiryRaw = firstSub["expiry"]
+                var expiryTimestamp: Double? = nil
+                if let num = expiryRaw as? Double { expiryTimestamp = num }
+                else if let num = expiryRaw as? Int { expiryTimestamp = Double(num) }
+                else if let str = expiryRaw as? String, let num = Double(str) { expiryTimestamp = num }
+
+                if let exp = expiryTimestamp {
+                    if exp > 2000000000 || exp <= 0 {
+                        remainingText = "Vĩnh viễn (Lifetime)"
+                        expiresAtFormatted = "Lifetime"
+                    } else {
+                        let date = Date(timeIntervalSince1970: exp)
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "dd/MM/yyyy HH:mm"
+                        formatter.locale = Locale(identifier: "vi_VN")
+                        expiresAtFormatted = formatter.string(from: date)
+
+                        let now = Date().timeIntervalSince1970
+                        let timeLeft = exp - now
+                        if timeLeft <= 0 {
+                            remainingText = "Đã hết hạn"
+                        } else {
+                            let days = Int(timeLeft / 86400)
+                            let hours = Int((timeLeft.truncatingRemainder(dividingBy: 86400)) / 3600)
+                            if days > 0 {
+                                remainingText = "Còn \(days) ngày \(hours) giờ"
+                            } else {
+                                let mins = max(1, Int((timeLeft.truncatingRemainder(dividingBy: 3600)) / 60))
+                                remainingText = "Còn \(hours) giờ \(mins) phút"
+                            }
+                        }
+                    }
+                } else if let timeleft = firstSub["timeleft"] as? Int {
+                    if timeleft >= 315360000 {
+                        remainingText = "Vĩnh viễn (Lifetime)"
+                        expiresAtFormatted = "Lifetime"
+                    } else if timeleft > 0 {
+                        let days = timeleft / 86400
+                        let hours = (timeleft % 86400) / 3600
+                        if days > 0 {
+                            remainingText = "Còn \(days) ngày \(hours) giờ"
+                        } else {
+                            let mins = max(1, (timeleft % 3600) / 60)
+                            remainingText = "Còn \(hours) giờ \(mins) phút"
+                        }
+                    } else {
+                        remainingText = "Đã hết hạn"
+                    }
+                }
+            } else if let expiry = info["expiry"] as? String, let expiryTimestamp = Double(expiry) {
+                let date = Date(timeIntervalSince1970: expiryTimestamp)
+                let formatter = DateFormatter()
+                formatter.dateFormat = "dd/MM/yyyy HH:mm"
+                expiresAtFormatted = formatter.string(from: date)
             }
         }
 
         return LicenseSession(
             licenseKey: trimmed,
-            statusText: fields.status.isEmpty ? "Active" : fields.status,
-            remainingText: remainingText(
-                expiresAt: fields.expiresAt,
-                days: fields.remainingDays,
-                hours: fields.remainingHours
-            ),
-            expiresAt: fields.expiresAt
+            statusText: statusText,
+            remainingText: remainingText,
+            expiresAt: expiresAtFormatted
         )
-    }
-
-    private struct LicenseFields {
-        var status = ""
-        var expiresAt = ""
-        var remainingDays = 0
-        var remainingHours: Double = -1
-    }
-
-    private static func outerFields(_ json: [String: Any]) -> LicenseFields {
-        var f = LicenseFields()
-        f.status = json["status"] as? String ?? ""
-        f.expiresAt = json["expires_at"] as? String ?? ""
-        f.remainingDays = intValue(json["remaining_days"]) ?? 0
-        f.remainingHours = doubleValue(json["remaining_hours"]) ?? -1
-        return f
-    }
-
-    private static func mergedFields(outer: LicenseFields, payload: [String: Any]) -> LicenseFields {
-        var f = outer
-        if let v = payload["status"] as? String, !v.isEmpty { f.status = v }
-        if let v = payload["expiry_date"] as? String { f.expiresAt = v }
-        if let v = intValue(payload["remaining_days"]) { f.remainingDays = v }
-        if let v = doubleValue(payload["remaining_hours"]) { f.remainingHours = v }
-        return f
-    }
-
-    private static func intValue(_ any: Any?) -> Int? {
-        if let v = any as? Int { return v }
-        if let v = any as? Double { return Int(v) }
-        if let v = any as? String, let n = Int(v) { return n }
-        return nil
-    }
-
-    private static func doubleValue(_ any: Any?) -> Double? {
-        if let v = any as? Double { return v }
-        if let v = any as? Int { return Double(v) }
-        if let v = any as? String, let n = Double(v) { return n }
-        return nil
-    }
-
-    // Lifetime: không có hạn hoặc số âm. Ngược lại quy về giờ/phút.
-    private static func remainingText(expiresAt: String, days: Int, hours: Double) -> String {
-        if expiresAt.isEmpty || days < 0 || (days == 0 && hours <= 0) {
-            return "Lifetime"
-        }
-        var value = hours
-        if value <= 0 && days > 0 {
-            value = Double(days) * 24.0
-        }
-        if value <= 0 { return "Đã hết hạn" }
-        if value >= 1 {
-            let whole = Int(value.rounded(.down))
-            return "\(max(whole, 1)) giờ"
-        }
-        let minutes = Int((value * 60.0).rounded(.down))
-        if minutes >= 1 { return "\(minutes) phút" }
-        return "Sắp hết hạn"
     }
 
     private static func escape(_ value: String) -> String {
@@ -595,72 +601,6 @@ enum LicenseAuthService {
         let generated = UUID().uuidString
         UserDefaults.standard.set(generated, forKey: fallbackKey)
         return generated
-    }
-
-    private static func deviceModel() -> String {
-        var systemInfo = utsname()
-        uname(&systemInfo)
-        let mirror = Mirror(reflecting: systemInfo.machine)
-        var machine = ""
-        for child in mirror.children {
-            guard let byte = child.value as? Int8, byte != 0 else { break }
-            machine.append(String(UnicodeScalar(UInt8(bitPattern: byte))))
-        }
-        return machine.isEmpty ? "iPhone" : machine
-    }
-
-    // payload = base64(IV 16 byte + AES-256-CBC ciphertext + HMAC-SHA256 32 byte),
-    // key = app secret đệm/cắt về đúng 32 byte.
-    private static func decryptPayload(_ base64: String) -> Data? {
-        guard let data = Data(base64Encoded: base64), data.count >= 48 else { return nil }
-
-        let iv = data.prefix(16)
-        let signature = data.suffix(32)
-        let signedPart = data.dropLast(32)
-        let ciphertext = signedPart.dropFirst(16)
-
-        let keyData = cryptoKey()
-
-        let expected = HMAC<SHA256>.authenticationCode(for: signedPart, using: SymmetricKey(data: keyData))
-        guard Data(expected) == Data(signature) else { return nil }
-
-        return aesDecrypt(Data(ciphertext), iv: Data(iv), key: keyData)
-    }
-
-    private static func cryptoKey() -> Data {
-        var secret = Data(LicenseConfig.appSecret.utf8)
-        if secret.count < 32 {
-            secret.append(Data(repeating: 0, count: 32 - secret.count))
-        } else if secret.count > 32 {
-            secret = secret.prefix(32)
-        }
-        return secret
-    }
-
-    private static func aesDecrypt(_ data: Data, iv: Data, key: Data) -> Data? {
-        guard !data.isEmpty, iv.count == 16, key.count == 32 else { return nil }
-        var out = Data(repeating: 0, count: data.count + kCCBlockSizeAES128)
-        var moved = 0
-        let status = out.withUnsafeMutableBytes { outPtr in
-            data.withUnsafeBytes { dataPtr in
-                iv.withUnsafeBytes { ivPtr in
-                    key.withUnsafeBytes { keyPtr in
-                        CCCrypt(
-                            CCOperation(kCCDecrypt),
-                            CCAlgorithm(kCCAlgorithmAES),
-                            CCOptions(kCCOptionPKCS7Padding),
-                            keyPtr.baseAddress, key.count,
-                            ivPtr.baseAddress,
-                            dataPtr.baseAddress, data.count,
-                            outPtr.baseAddress, outPtr.count,
-                            &moved
-                        )
-                    }
-                }
-            }
-        }
-        guard status == kCCSuccess else { return nil }
-        return out.prefix(moved)
     }
 }
 
