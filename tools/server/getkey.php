@@ -8,7 +8,7 @@
 //
 // LƯU Ý: đổi $secret này khi app đổi appSecret, nếu không mã sẽ lệch app.
 
-$secret = 'RueU6yJc8ozAbJB1WvmP6ULXIVu4sOxSNBqUwa7lSKJdqhLfetgI9jDfS5ZuaqNV';
+$secret = 'UvrzC44ecECEc4pifKbcPKRx3QxsOwXqZ2JS1v9FW5ICNzXe2WQreIqnCo2dLDzN';
 
 $day    = (int) floor(time() / 86400); // ngày epoch UTC
 $ma     = strtoupper(substr(hash_hmac('sha256', "getkey|" . $day, $secret), 0, 8));
