@@ -1,10 +1,14 @@
 import SwiftUI
 import UIKit
 
-// MARK: - Floating Draggable Overlay Menu Component
+// MARK: - Floating Draggable Overlay Menu Component (AssistiveTouch Physics)
 //
-// Cung cấp Nút Tròn Nổi (Floating Ball) có thể kéo thả di chuyển tự do trên màn hình
-// và bảng Menu Mini Overlay chứa các nút chức năng nhanh (Toggles, Anti-Ban, Khôi phục).
+// Nút Tròn Nổi với cơ chế vật lý chuyển động siêu mượt (Smooth AssistiveTouch Physics):
+// - Bám ngón tay 1:1 không có độ trễ
+// - Tính toán vận tốc quán tính (Velocity inertia) và tự động hít vào mép trái/phải màn hình
+// - Tự động mờ (Idle Opacity Dimming) sau 3 giây không chạm giống hệt AssistiveTouch trên iPhone
+// - Hiệu ứng rung phản hồi haptic xúc giác khi hít mép
+// - Bảng Menu Mini Glassmorphism đầy đủ chức năng điều khiển nhanh
 
 struct FloatingOverlayMenuView: View {
     let game: AimGameKind
@@ -23,125 +27,139 @@ struct FloatingOverlayMenuView: View {
     @State private var isExpanded: Bool = false
     @State private var selectedTab: HackSubCategory = .aim
     
-    // Drag and position state
-    @State private var position: CGPoint = CGPoint(x: UIScreen.main.bounds.width - 44, y: UIScreen.main.bounds.height / 2)
-    @State private var dragTranslation: CGSize = .zero
+    // AssistiveTouch drag & position state
+    @State private var position: CGPoint = CGPoint(x: UIScreen.main.bounds.width - 32, y: UIScreen.main.bounds.height * 0.45)
+    @State private var dragOffset: CGSize = .zero
     @State private var isDragging: Bool = false
+    @State private var isIdle: Bool = false
+    @State private var idleTimerTask: Task<Void, Never>? = nil
     
     private let buttonSize: CGFloat = 54
+    private let edgePadding: CGFloat = 6
+    private let topSafeAreaMargin: CGFloat = 60
+    private let bottomSafeAreaMargin: CGFloat = 85
     
     var body: some View {
         if isEnabled {
             GeometryReader { geo in
                 ZStack {
-                    // Dimmed backdrop when expanded
+                    // Dimmed backdrop khi mở rộng bảng menu
                     if isExpanded {
-                        Color.black.opacity(0.45)
+                        Color.black.opacity(0.48)
                             .ignoresSafeArea()
                             .transition(.opacity)
                             .onTapGesture {
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                                    isExpanded = false
-                                }
+                                closeMenu()
                             }
                     }
                     
                     if isExpanded {
                         // Bảng Menu Mini Overlay khi mở rộng
                         expandedMenuCard(screenSize: geo.size)
-                            .transition(.scale(scale: 0.85).combined(with: .opacity))
+                            .transition(.asymmetric(
+                                insertion: .scale(scale: 0.88, anchor: .center).combined(with: .opacity),
+                                removal: .scale(scale: 0.88, anchor: .center).combined(with: .opacity)
+                            ))
                     } else {
-                        // Nút Tròn Nổi di chuyển được
-                        floatingBall(screenSize: geo.size)
+                        // Nút Tròn Nổi chuẩn AssistiveTouch
+                        floatingAssistiveBall(screenSize: geo.size)
                             .position(
-                                x: clampedX(position.x + dragTranslation.width, in: geo.size),
-                                y: clampedY(position.y + dragTranslation.height, in: geo.size)
+                                x: clampedX(position.x + dragOffset.width, in: geo.size),
+                                y: clampedY(position.y + dragOffset.height, in: geo.size)
                             )
                             .gesture(
-                                DragGesture()
+                                DragGesture(minimumDistance: 1, coordinateSpace: .global)
                                     .onChanged { value in
+                                        resetIdleTimer(isInteracting: true)
                                         isDragging = true
-                                        dragTranslation = value.translation
+                                        dragOffset = value.translation
                                     }
                                     .onEnded { value in
-                                        let finalX = clampedX(position.x + value.translation.width, in: geo.size)
-                                        let finalY = clampedY(position.y + value.translation.height, in: geo.size)
-                                        
-                                        // Tự động hít nhẹ về mép trái hoặc mép phải nếu gần
-                                        let snappedX: CGFloat
-                                        if finalX < geo.size.width / 2 {
-                                            snappedX = max(buttonSize / 2 + 10, finalX)
-                                        } else {
-                                            snappedX = min(geo.size.width - buttonSize / 2 - 10, finalX)
-                                        }
-                                        
-                                        withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) {
-                                            position = CGPoint(x: snappedX, y: finalY)
-                                            dragTranslation = .zero
-                                            isDragging = false
-                                        }
+                                        handleDragEnd(value: value, in: geo.size)
                                     }
                             )
-                            .transition(.scale.combined(with: .opacity))
+                            .transition(.scale(scale: 0.6).combined(with: .opacity))
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .onAppear {
+                    resetIdleTimer()
+                }
             }
         }
     }
     
-    // MARK: - Nút Tròn Nổi (Floating Ball)
-    private func floatingBall(screenSize: CGSize) -> some View {
+    // MARK: - Nút Tròn Nổi Kiểu AssistiveTouch (Floating Ball)
+    private func floatingAssistiveBall(screenSize: CGSize) -> some View {
         let isAntiBanOn = antiBanService.isRunning(game.targetGame)
         let hasActiveHack = !appliedAimIDs.isEmpty
         
         return Button {
             if !isDragging {
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                withAnimation(.spring(response: 0.38, dampingFraction: 0.76)) {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
                     isExpanded = true
                 }
             }
         } label: {
             ZStack {
-                // Hiệu ứng phát sáng Glow
+                // Vòng sáng Glow bên ngoài khi đang hoạt động
                 Circle()
                     .fill(
                         RadialGradient(
                             colors: [
-                                isAntiBanOn ? Color.green.opacity(0.6) : AppTheme.accent.opacity(0.6),
+                                isAntiBanOn ? Color.green.opacity(0.55) : AppTheme.accent.opacity(0.55),
                                 Color.clear
                             ],
                             center: .center,
-                            startRadius: 15,
+                            startRadius: 14,
                             endRadius: 36
                         )
                     )
-                    .frame(width: buttonSize + 16, height: buttonSize + 16)
-                    .scaleEffect(isDragging ? 1.15 : 1.0)
+                    .frame(width: buttonSize + 18, height: buttonSize + 18)
+                    .opacity(isDragging ? 1.0 : (isIdle ? 0.3 : 0.85))
                 
-                // Nền nút tròn
+                // Vỏ ngoài AssistiveTouch mờ ảo
                 Circle()
                     .fill(
                         LinearGradient(
-                            colors: isAntiBanOn
-                                ? [Color(red: 0.10, green: 0.85, blue: 0.45), Color(red: 0.05, green: 0.60, blue: 0.30)]
-                                : [AppTheme.gradientStart, AppTheme.gradientEnd],
+                            colors: [
+                                Color.white.opacity(0.28),
+                                Color.white.opacity(0.08)
+                            ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
                     .frame(width: buttonSize, height: buttonSize)
+                    .background(
+                        Circle()
+                            .fill(Color.black.opacity(0.65))
+                            .blur(radius: 2)
+                    )
+                
+                // Lõi nút tròn chuyển màu
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: isAntiBanOn
+                                ? [Color(red: 0.12, green: 0.88, blue: 0.50), Color(red: 0.04, green: 0.62, blue: 0.32)]
+                                : [AppTheme.gradientStart, AppTheme.gradientEnd],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: buttonSize - 10, height: buttonSize - 10)
                     .overlay(
                         Circle()
-                            .strokeBorder(Color.white.opacity(0.4), lineWidth: 1.5)
+                            .strokeBorder(Color.white.opacity(0.6), lineWidth: 1.2)
                     )
-                    .shadow(color: (isAntiBanOn ? Color.green : AppTheme.accent).opacity(0.5), radius: 10, y: 4)
+                    .shadow(color: (isAntiBanOn ? Color.green : AppTheme.accent).opacity(0.6), radius: 8, y: 3)
                 
-                // Icon bên trong nút tròn
-                VStack(spacing: 1) {
+                // Icon bên trong
+                VStack(spacing: 2) {
                     Image(systemName: "scope")
-                        .font(.system(size: 20, weight: .black))
+                        .font(.system(size: 19, weight: .black))
                         .foregroundStyle(.white)
                     
                     if isAntiBanOn {
@@ -151,10 +169,66 @@ struct FloatingOverlayMenuView: View {
                     }
                 }
             }
+            .opacity(isDragging ? 1.0 : (isIdle ? 0.48 : 0.96))
+            .scaleEffect(isDragging ? 1.10 : 1.0)
+            .animation(.spring(response: 0.28, dampingFraction: 0.72), value: isDragging)
+            .animation(.easeInOut(duration: 0.4), value: isIdle)
         }
         .buttonStyle(.plain)
-        .scaleEffect(isDragging ? 1.08 : 1.0)
-        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isDragging)
+    }
+    
+    // MARK: - Xử lý vật lý nhả tay và hít mép (AssistiveTouch Physics)
+    private func handleDragEnd(value: DragGesture.Value, in size: CGSize) {
+        let currentTargetX = position.x + value.translation.width
+        let currentTargetY = position.y + value.translation.height
+        
+        // Quán tính lực vuốt (Inertia based on predicted velocity)
+        let predictedX = position.x + value.predictedEndTranslation.width
+        let snapToLeft = predictedX < size.width / 2
+        
+        let targetX: CGFloat = snapToLeft
+            ? (buttonSize / 2 + edgePadding)
+            : (size.width - buttonSize / 2 - edgePadding)
+        
+        let finalY = clampedY(currentTargetY + (value.predictedEndTranslation.height - value.translation.height) * 0.2, in: size)
+        
+        UISelectionFeedbackGenerator().selectionChanged()
+        
+        withAnimation(.spring(response: 0.36, dampingFraction: 0.74, blendDuration: 0.05)) {
+            position = CGPoint(x: targetX, y: finalY)
+            dragOffset = .zero
+            isDragging = false
+        }
+        
+        resetIdleTimer()
+    }
+    
+    // Đếm thời gian tự làm mờ nút khi không dùng (Idle Dimming)
+    private func resetIdleTimer(isInteracting: Bool = false) {
+        idleTimerTask?.cancel()
+        if isInteracting {
+            isIdle = false
+            return
+        }
+        isIdle = false
+        idleTimerTask = Task {
+            try? await Task.sleep(nanoseconds: 3_000_000_000) // 3 giây
+            if !Task.isCancelled {
+                await MainActor.run {
+                    withAnimation(.easeInOut(duration: 0.45)) {
+                        isIdle = true
+                    }
+                }
+            }
+        }
+    }
+    
+    private func closeMenu() {
+        UISelectionFeedbackGenerator().selectionChanged()
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.8)) {
+            isExpanded = false
+        }
+        resetIdleTimer()
     }
     
     // MARK: - Bảng Menu Mini Overlay
@@ -187,10 +261,7 @@ struct FloatingOverlayMenuView: View {
                 
                 // Nút thu nhỏ / đóng overlay
                 Button {
-                    UISelectionFeedbackGenerator().selectionChanged()
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                        isExpanded = false
-                    }
+                    closeMenu()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 22))
@@ -373,11 +444,11 @@ struct FloatingOverlayMenuView: View {
     // MARK: - Bounds Calculation
     private func clampedX(_ x: CGFloat, in size: CGSize) -> CGFloat {
         let radius = buttonSize / 2
-        return min(max(radius + 8, x), size.width - radius - 8)
+        return min(max(radius + edgePadding, x), size.width - radius - edgePadding)
     }
     
     private func clampedY(_ y: CGFloat, in size: CGSize) -> CGFloat {
         let radius = buttonSize / 2
-        return min(max(radius + 50, y), size.height - radius - 60)
+        return min(max(radius + topSafeAreaMargin, y), size.height - radius - bottomSafeAreaMargin)
     }
 }
