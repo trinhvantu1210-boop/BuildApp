@@ -109,6 +109,10 @@ struct FloatingOverlayMenuView: View {
                     position = CGPoint(x: initialX, y: initialY)
                     resetIdleTimer()
                 }
+                .onChange(of: geo.size) { newSize in
+                    // Cập nhật vị trí khi màn hình thay đổi
+                    clampPosition(in: newSize)
+                }
             }
         }
     }
@@ -117,6 +121,7 @@ struct FloatingOverlayMenuView: View {
     private func floatingAssistiveBall(screenSize: CGSize) -> some View {
         let isAntiBanOn = antiBanService.isRunning(game.targetGame)
         let hasActiveHack = !appliedAimIDs.isEmpty
+        let activeHackCount = appliedAimIDs.count
         
         return ZStack {
             // Vòng sáng Glow bên ngoài khi đang hoạt động
@@ -160,7 +165,9 @@ struct FloatingOverlayMenuView: View {
                     LinearGradient(
                         colors: isAntiBanOn
                             ? [Color(red: 0.12, green: 0.88, blue: 0.50), Color(red: 0.04, green: 0.62, blue: 0.32)]
-                            : [AppTheme.gradientStart, AppTheme.gradientEnd],
+                            : hasActiveHack
+                                ? [Color(red: 1.0, green: 0.6, blue: 0.1), Color(red: 0.9, green: 0.3, blue: 0.05)]
+                                : [AppTheme.gradientStart, AppTheme.gradientEnd],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -183,6 +190,25 @@ struct FloatingOverlayMenuView: View {
                         .fill(Color.white)
                         .frame(width: 4, height: 4)
                 }
+            }
+            
+            // Badge số lượng hack
+            if hasActiveHack && !isDragging && activeHackCount > 0 {
+                Text("\(activeHackCount)")
+                    .font(.system(size: 9, weight: .black))
+                    .foregroundStyle(.white)
+                    .frame(width: 18, height: 18)
+                    .background(
+                        Circle()
+                            .fill(Color.red)
+                            .overlay(
+                                Circle()
+                                    .strokeBorder(Color.white, lineWidth: 2)
+                            )
+                    )
+                    .offset(x: 20, y: -20)
+                    .scaleEffect(isIdle ? 0.5 : 1)
+                    .opacity(isIdle ? 0 : 1)
             }
         }
         .contentShape(Circle())
@@ -244,6 +270,13 @@ struct FloatingOverlayMenuView: View {
             isExpanded = false
         }
         resetIdleTimer()
+    }
+    
+    private func clampPosition(in size: CGSize) {
+        position = CGPoint(
+            x: clampedX(position.x, in: size),
+            y: clampedY(position.y, in: size)
+        )
     }
     
     // MARK: - Bảng Menu Mini Overlay
@@ -469,5 +502,51 @@ struct FloatingOverlayMenuView: View {
         let minY = radius + topSafeAreaMargin
         let maxY = max(minY, size.height - radius - bottomSafeAreaMargin)
         return min(max(minY, y), maxY)
+    }
+}
+
+// MARK: - Extension để sử dụng FloatingOverlayMenuView trong GameUnifiedHackDetailView
+extension GameUnifiedHackDetailView {
+    func floatingOverlayMenu() -> some View {
+        FloatingOverlayMenuView(
+            game: game,
+            isEnabled: $isOverlayEnabled,
+            aimsByCategory: aimsByCategory,
+            appliedAimIDs: appliedAimIDs,
+            workingAimIDs: workingAimIDs,
+            onToggleAim: { aim, on, config in
+                toggleAim(aim, on: on, config: config)
+            },
+            onRestoreCategory: {
+                restoreCurrentCategory()
+            },
+            isRestoringAll: isRestoringAll
+        )
+    }
+}
+
+// MARK: - SwiftUI Preview
+#Preview {
+    ZStack {
+        Color.black.ignoresSafeArea()
+        
+        VStack {
+            Text("Free Fire")
+                .foregroundColor(.white)
+                .font(.largeTitle)
+                .padding()
+            
+            // Demo FloatingOverlayMenuView
+            FloatingOverlayMenuView(
+                game: .freeFire,
+                isEnabled: .constant(true),
+                aimsByCategory: [:],
+                appliedAimIDs: [],
+                workingAimIDs: [],
+                onToggleAim: { _, _, _ in },
+                onRestoreCategory: {},
+                isRestoringAll: false
+            )
+        }
     }
 }

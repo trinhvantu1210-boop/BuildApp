@@ -473,44 +473,74 @@ struct GameUnifiedHackDetailView: View {
     @State private var isRestoringAll = false
     @State private var activeError: String?
     @State private var isInstalled = false
+    
+    // State cho Floating Button
+    @State private var showFloatingMenu = false
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 18) {
-                // 1. Anti-Ban Banner riêng cho game này
-                antiBanSection
+        ZStack {
+            ScrollView {
+                VStack(spacing: 18) {
+                    // 1. Anti-Ban Banner riêng cho game này
+                    antiBanSection
 
-                // 2. Banner bật/tắt Nút Menu Nổi (Overlay) có thể kéo thả
-                overlayToggleSection
+                    // 2. Banner bật/tắt Nút Menu Nổi (Overlay) có thể kéo thả
+                    overlayToggleSection
 
-                // 3. Thanh gạt 3 Sub-Tabs: Aim / Mod / Định Vị
-                subTabBar
+                    // 3. Thanh gạt 3 Sub-Tabs: Aim / Mod / Định Vị
+                    subTabBar
 
-                // 4. Danh sách tính năng của Sub-Tab đang chọn
-                featureListSection
+                    // 4. Danh sách tính năng của Sub-Tab đang chọn
+                    featureListSection
+                }
+                .padding(.horizontal, AppTheme.pageInset)
+                .padding(.top, 14)
+                .padding(.bottom, 32)
             }
-            .padding(.horizontal, AppTheme.pageInset)
-            .padding(.top, 14)
-            .padding(.bottom, 32)
-        }
-        .background(AppTheme.pageBackground.ignoresSafeArea())
-        .navigationTitle(game.title)
-        .navigationBarTitleDisplayMode(.inline)
-        .overlay {
-            FloatingOverlayMenuView(
-                game: game,
-                isEnabled: $isOverlayEnabled,
-                aimsByCategory: aimsByCategory,
-                appliedAimIDs: appliedAimIDs,
-                workingAimIDs: workingAimIDs,
-                onToggleAim: { aim, on, config in
-                    toggleAim(aim, on: on, config: config)
-                },
-                onRestoreCategory: {
-                    restoreCurrentCategory()
-                },
-                isRestoringAll: isRestoringAll
-            )
+            .background(AppTheme.pageBackground.ignoresSafeArea())
+            .navigationTitle(game.title)
+            .navigationBarTitleDisplayMode(.inline)
+            
+            // Nút tròn nổi mượt
+            if isOverlayEnabled {
+                SmoothFloatingButton(
+                    game: game,
+                    isAntiBanOn: antiBanService.isRunning(game.targetGame),
+                    hasActiveHack: !appliedAimIDs.isEmpty,
+                    activeHackCount: appliedAimIDs.count,
+                    onTap: {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
+                            showFloatingMenu.toggle()
+                        }
+                    }
+                )
+                .zIndex(999)
+            }
+            
+            // Menu overlay khi bấm vào nút tròn
+            if showFloatingMenu {
+                FloatingMenuOverlay(
+                    game: game,
+                    aimsByCategory: aimsByCategory,
+                    appliedAimIDs: appliedAimIDs,
+                    workingAimIDs: workingAimIDs,
+                    selectedTab: selectedSubTab,
+                    isRestoringAll: isRestoringAll,
+                    antiBanService: antiBanService,
+                    onToggleAim: { aim, on, config in
+                        toggleAim(aim, on: on, config: config)
+                    },
+                    onRestoreCategory: {
+                        restoreCurrentCategory()
+                    },
+                    onDismiss: {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
+                            showFloatingMenu = false
+                        }
+                    }
+                )
+                .zIndex(1000)
+            }
         }
         .onAppear {
             isInstalled = ContainerStore.resolveAppContainerPath(bundleID: game.bundleID) != nil
@@ -540,7 +570,7 @@ struct GameUnifiedHackDetailView: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text("Nút Tròn Nổi Overlay")
+                    Text("Nút Tròn Nổi")
                         .font(.headline)
                         .foregroundStyle(.primary)
 
