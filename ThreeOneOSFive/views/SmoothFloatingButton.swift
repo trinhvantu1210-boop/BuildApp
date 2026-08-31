@@ -555,31 +555,5 @@ struct FloatingMenuOverlay: View {
         }
         .buttonStyle(.plain)
         .disabled(isRestoringAll)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 12)
-    }
-}
-
-// MARK: - SwiftUI Preview
-#Preview {
-    ZStack {
-        Color.black.ignoresSafeArea()
-        
-        VStack {
-            Text("Free Fire")
-                .foregroundColor(.white)
-                .font(.largeTitle)
-                .padding()
-            
-            SmoothFloatingButton(
-                game: .freeFire,
-                isAntiBanOn: true,
-                hasActiveHack: true,
-                activeHackCount: 3,
-                onTap: {
-                    print("Button tapped!")
-                }
-            )
-        }
     }
 }

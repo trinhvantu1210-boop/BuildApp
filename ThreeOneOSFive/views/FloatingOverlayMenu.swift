@@ -501,52 +501,5 @@ struct FloatingOverlayMenuView: View {
         let radius = buttonSize / 2
         let minY = radius + topSafeAreaMargin
         let maxY = max(minY, size.height - radius - bottomSafeAreaMargin)
-        return min(max(minY, y), maxY)
-    }
-}
-
-// MARK: - Extension để sử dụng FloatingOverlayMenuView trong GameUnifiedHackDetailView
-extension GameUnifiedHackDetailView {
-    func floatingOverlayMenu() -> some View {
-        FloatingOverlayMenuView(
-            game: game,
-            isEnabled: $isOverlayEnabled,
-            aimsByCategory: aimsByCategory,
-            appliedAimIDs: appliedAimIDs,
-            workingAimIDs: workingAimIDs,
-            onToggleAim: { aim, on, config in
-                toggleAim(aim, on: on, config: config)
-            },
-            onRestoreCategory: {
-                restoreCurrentCategory()
-            },
-            isRestoringAll: isRestoringAll
-        )
-    }
-}
-
-// MARK: - SwiftUI Preview
-#Preview {
-    ZStack {
-        Color.black.ignoresSafeArea()
-        
-        VStack {
-            Text("Free Fire")
-                .foregroundColor(.white)
-                .font(.largeTitle)
-                .padding()
-            
-            // Demo FloatingOverlayMenuView
-            FloatingOverlayMenuView(
-                game: .freeFire,
-                isEnabled: .constant(true),
-                aimsByCategory: [:],
-                appliedAimIDs: [],
-                workingAimIDs: [],
-                onToggleAim: { _, _, _ in },
-                onRestoreCategory: {},
-                isRestoringAll: false
-            )
-        }
     }
 }
