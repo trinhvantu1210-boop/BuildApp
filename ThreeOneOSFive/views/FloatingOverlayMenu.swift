@@ -501,5 +501,6 @@ struct FloatingOverlayMenuView: View {
         let radius = buttonSize / 2
         let minY = radius + topSafeAreaMargin
         let maxY = max(minY, size.height - radius - bottomSafeAreaMargin)
+        return min(max(minY, y), maxY)
     }
 }

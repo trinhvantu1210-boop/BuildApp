@@ -555,5 +555,7 @@ struct FloatingMenuOverlay: View {
         }
         .buttonStyle(.plain)
         .disabled(isRestoringAll)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 12)
     }
 }
