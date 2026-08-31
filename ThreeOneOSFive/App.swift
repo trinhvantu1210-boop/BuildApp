@@ -1602,11 +1602,11 @@ private struct GetKeySheet: View {
     // Nội dung tin nhắn mẫu — Admin iqv dựa vào MÃ MÁY để tra máy, video để xác nhận vượt link.
     private var adminMessage: String {
         """
-        XIN KEY MIỄN PHÍ - ZRX SOFTWARE (gửi Admin iqv)
+        XIN KEY MIỄN PHÍ - PrMods (gửi Admin TrinhTu)
         • Đã vượt đủ 2 link Get Key trong app
         • Video quay màn hình lúc vượt link: đính kèm
         • Mã máy: \(LicenseAuthService.hardwareID())
-        Admin iqv kiểm tra xong cho em xin key 1 ngày với ạ!
+        Admin TrinhTu kiểm tra xong cho em xin key 1 ngày với ạ!
         """
     }
 

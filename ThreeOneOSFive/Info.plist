@@ -24,7 +24,7 @@
     <array>
         <dict>
             <key>CFBundleTypeName</key>
-            <string>ZrxSoftware Patch Package</string>
+            <string>PrMods Patch Package</string>
             <key>CFBundleTypeRole</key>
             <string>Editor</string>
             <key>LSHandlerRank</key>
@@ -54,7 +54,7 @@
                 <string>public.data</string>
             </array>
             <key>UTTypeDescription</key>
-            <string>ZrxSoftware Patch Package</string>
+            <string>PrMods Patch Package</string>
             <key>UTTypeIdentifier</key>
             <string>com.yangjiii.3105.patch-package</string>
             <key>UTTypeTagSpecification</key>
@@ -77,9 +77,9 @@
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>NSPhotoLibraryUsageDescription</key>
-    <string>ZrxSoftware needs access to photos for wallpaper customization.</string>
+    <string>PrMods needs access to photos for wallpaper customization.</string>
     <key>NSDocumentsFolderUsageDescription</key>
-    <string>ZrxSoftware needs access to documents.</string>
+    <string>PrMods needs access to documents.</string>
     <key>UIApplicationSceneManifest</key>
     <dict>
         <key>UIApplicationSupportsMultipleScenes</key>

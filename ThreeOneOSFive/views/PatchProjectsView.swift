@@ -464,6 +464,7 @@ struct GameUnifiedHackDetailView: View {
 
     @State private var selectedSubTab: HackSubCategory = .aim
     @ObservedObject private var antiBanService = FFAntiBanService.shared
+    @AppStorage("floating_overlay_enabled") private var isOverlayEnabled = false
 
     // Data catalogs for each sub-tab
     @State private var aimsByCategory: [HackSubCategory: [BundledAim]] = [:]
@@ -479,10 +480,13 @@ struct GameUnifiedHackDetailView: View {
                 // 1. Anti-Ban Banner riêng cho game này
                 antiBanSection
 
-                // 2. Thanh gạt 3 Sub-Tabs: Aim / Mod / Định Vị
+                // 2. Banner bật/tắt Nút Menu Nổi (Overlay) có thể kéo thả
+                overlayToggleSection
+
+                // 3. Thanh gạt 3 Sub-Tabs: Aim / Mod / Định Vị
                 subTabBar
 
-                // 3. Danh sách tính năng của Sub-Tab đang chọn
+                // 4. Danh sách tính năng của Sub-Tab đang chọn
                 featureListSection
             }
             .padding(.horizontal, AppTheme.pageInset)
@@ -492,6 +496,22 @@ struct GameUnifiedHackDetailView: View {
         .background(AppTheme.pageBackground.ignoresSafeArea())
         .navigationTitle(game.title)
         .navigationBarTitleDisplayMode(.inline)
+        .overlay {
+            FloatingOverlayMenuView(
+                game: game,
+                isEnabled: $isOverlayEnabled,
+                aimsByCategory: aimsByCategory,
+                appliedAimIDs: appliedAimIDs,
+                workingAimIDs: workingAimIDs,
+                onToggleAim: { aim, on, config in
+                    toggleAim(aim, on: on, config: config)
+                },
+                onRestoreCategory: {
+                    restoreCurrentCategory()
+                },
+                isRestoringAll: isRestoringAll
+            )
+        }
         .onAppear {
             isInstalled = ContainerStore.resolveAppContainerPath(bundleID: game.bundleID) != nil
             loadAllCatalogs()
@@ -503,6 +523,52 @@ struct GameUnifiedHackDetailView: View {
                 dismissButton: .default(Text("OK"))
             )
         }
+    }
+
+    // Banner Bật / Tắt Nút Tròn Nổi Overlay Kéo Thả
+    private var overlayToggleSection: some View {
+        HStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(isOverlayEnabled ? AppTheme.accent.opacity(0.18) : Color.secondary.opacity(0.12))
+                    .frame(width: 48, height: 48)
+
+                Image(systemName: isOverlayEnabled ? "scope" : "circle.dashed")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(isOverlayEnabled ? AppTheme.accent : Color.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Text("Nút Tròn Nổi Overlay")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+
+                    if isOverlayEnabled {
+                        Circle().fill(Color.green).frame(width: 6, height: 6)
+                    }
+                }
+
+                Text(isOverlayEnabled ? "Đang hiện nút tròn kéo thả trên màn hình" : "Bật để hiện nút chức năng di chuyển tự do")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Toggle("", isOn: $isOverlayEnabled.animation(.spring(response: 0.35, dampingFraction: 0.75)))
+                .labelsHidden()
+                .tint(AppTheme.accent)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color(uiColor: .secondarySystemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .strokeBorder(isOverlayEnabled ? AppTheme.accent.opacity(0.4) : AppTheme.accent.opacity(0.12), lineWidth: 1)
+        )
     }
 
     // Banner Anti-Ban Cực Cao
