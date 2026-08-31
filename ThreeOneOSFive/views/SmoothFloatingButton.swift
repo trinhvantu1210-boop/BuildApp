@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-// MARK: - Nút Tròn Mượt Cho Free Fire
+// MARK: - Nút Tròn Mượt Cho Free Fire (Zero-Lag AssistiveTouch)
 struct SmoothFloatingButton: View {
     let game: AimGameKind
     let isAntiBanOn: Bool
@@ -51,8 +51,6 @@ struct SmoothFloatingButton: View {
                 clampPosition(in: newSize)
             }
         }
-        .frame(height: 1) // GeometryReader chiếm toàn bộ không gian
-        .allowsHitTesting(true)
     }
     
     // MARK: - Nút Tròn Chính
@@ -163,14 +161,6 @@ struct SmoothFloatingButton: View {
         .scaleEffect(isDragging ? 1.15 : (isIdle ? 0.92 : 1))
         .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isDragging)
         .animation(.easeInOut(duration: 0.4), value: isIdle)
-        .onTapGesture {
-            if !isDragging {
-                if isHapticEnabled {
-                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                }
-                onTap()
-            }
-        }
     }
     
     // MARK: - Drag Handlers
@@ -188,14 +178,19 @@ struct SmoothFloatingButton: View {
     private func handleDragEnded(_ value: DragGesture.Value, in size: CGSize) {
         let translationDistance = hypot(value.translation.width, value.translation.height)
         
-        // Nếu kéo quá ngắn => coi như tap
-        if translationDistance < 10 {
+        // Nếu kéo quá ngắn (Tap) => Kích hoạt onTap tức thì
+        if translationDistance < 8 {
             dragOffset = .zero
             isDragging = false
+            if isHapticEnabled {
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            }
+            onTap()
+            resetIdleTimer()
             return
         }
         
-        // Tính toán vị trí mới với quán tính
+        // Tính toán vị trí mới với quán tính hít mép
         let predictedX = position.x + value.predictedEndTranslation.width
         let targetX: CGFloat = predictedX < size.width / 2
             ? (buttonSize / 2 + edgePadding)
@@ -310,6 +305,7 @@ struct FloatingMenuOverlay: View {
     let onDismiss: () -> Void
     
     @State private var localSelectedTab: HackSubCategory = .aim
+    @State private var appeared: Bool = false
     
     var body: some View {
         ZStack {
@@ -361,19 +357,15 @@ struct FloatingMenuOverlay: View {
                     )
             )
             .shadow(color: Color.black.opacity(0.6), radius: 30, y: 15)
-            .scaleEffect(0.95)
-            .opacity(0)
-            .animation(.spring(response: 0.5, dampingFraction: 0.8), value: true)
-            .onAppear {
-                // Animation khi xuất hiện
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                    // Scale và opacity sẽ được áp dụng
-                }
-            }
+            .scaleEffect(appeared ? 1.0 : 0.92)
+            .opacity(appeared ? 1.0 : 0.0)
         }
         .transition(.opacity)
         .onAppear {
             localSelectedTab = selectedTab
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
+                appeared = true
+            }
         }
     }
     
