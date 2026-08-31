@@ -1,14 +1,14 @@
 import SwiftUI
 import UIKit
 
-// MARK: - Floating Draggable Overlay Menu Component (AssistiveTouch Physics)
+// MARK: - Floating Draggable Overlay Menu Component (Zero-Lag AssistiveTouch)
 //
-// Nút Tròn Nổi với cơ chế vật lý chuyển động siêu mượt (Smooth AssistiveTouch Physics):
-// - Bám ngón tay 1:1 không có độ trễ
-// - Tính toán vận tốc quán tính (Velocity inertia) và tự động hít vào mép trái/phải màn hình
-// - Tự động mờ (Idle Opacity Dimming) sau 3 giây không chạm giống hệt AssistiveTouch trên iPhone
-// - Hiệu ứng rung phản hồi haptic xúc giác khi hít mép
-// - Bảng Menu Mini Glassmorphism đầy đủ chức năng điều khiển nhanh
+// Nút Tròn Nổi với cơ chế vật lý AssistiveTouch phản hồi tức thì 0ms:
+// - Bỏ Button wrapper gây delay/xung đột gesture trong SwiftUI
+// - Sử dụng DragGesture(minimumDistance: 0) để bám ngón tay lập tức ngay khi chạm
+// - Tự động nhận diện Chạm (Tap) để mở Menu và Vuốt (Drag) để di chuyển hít mép
+// - Quán tính lực vuốt (Velocity inertia) hít sát mép trái/phải màn hình
+// - Tự động làm mờ khi nghỉ (Idle Dimming) sau 3 giây
 
 struct FloatingOverlayMenuView: View {
     let game: AimGameKind
@@ -28,9 +28,13 @@ struct FloatingOverlayMenuView: View {
     @State private var selectedTab: HackSubCategory = .aim
     
     // AssistiveTouch drag & position state
-    @State private var position: CGPoint = CGPoint(x: UIScreen.main.bounds.width - 32, y: UIScreen.main.bounds.height * 0.45)
+    @State private var position: CGPoint = CGPoint(
+        x: max(350, UIScreen.main.bounds.width - 32),
+        y: UIScreen.main.bounds.height * 0.42
+    )
     @State private var dragOffset: CGSize = .zero
     @State private var isDragging: Bool = false
+    @State private var dragStartTime: Date? = nil
     @State private var isIdle: Bool = false
     @State private var idleTimerTask: Task<Void, Never>? = nil
     
@@ -51,9 +55,7 @@ struct FloatingOverlayMenuView: View {
                             .onTapGesture {
                                 closeMenu()
                             }
-                    }
-                    
-                    if isExpanded {
+                        
                         // Bảng Menu Mini Overlay khi mở rộng
                         expandedMenuCard(screenSize: geo.size)
                             .transition(.asymmetric(
@@ -61,21 +63,39 @@ struct FloatingOverlayMenuView: View {
                                 removal: .scale(scale: 0.88, anchor: .center).combined(with: .opacity)
                             ))
                     } else {
-                        // Nút Tròn Nổi chuẩn AssistiveTouch
+                        // Nút Tròn Nổi chuẩn AssistiveTouch (Không bị bao bọc bởi Button gây delay)
                         floatingAssistiveBall(screenSize: geo.size)
                             .position(
                                 x: clampedX(position.x + dragOffset.width, in: geo.size),
                                 y: clampedY(position.y + dragOffset.height, in: geo.size)
                             )
                             .gesture(
-                                DragGesture(minimumDistance: 1, coordinateSpace: .global)
+                                DragGesture(minimumDistance: 0)
                                     .onChanged { value in
-                                        resetIdleTimer(isInteracting: true)
+                                        if dragStartTime == nil {
+                                            dragStartTime = Date()
+                                        }
                                         isDragging = true
                                         dragOffset = value.translation
+                                        resetIdleTimer(isInteracting: true)
                                     }
                                     .onEnded { value in
-                                        handleDragEnd(value: value, in: geo.size)
+                                        let translationDistance = hypot(value.translation.width, value.translation.height)
+                                        let elapsed = Date().timeIntervalSince(dragStartTime ?? Date())
+                                        dragStartTime = nil
+                                        
+                                        if translationDistance < 8 && elapsed < 0.4 {
+                                            // Chạm nhẹ (Tap) -> Mở Menu tức thì
+                                            dragOffset = .zero
+                                            isDragging = false
+                                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                            withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
+                                                isExpanded = true
+                                            }
+                                        } else {
+                                            // Kéo thả (Drag) -> Hít vào mép màn hình
+                                            handleDragEnd(value: value, in: geo.size)
+                                        }
                                     }
                             )
                             .transition(.scale(scale: 0.6).combined(with: .opacity))
@@ -83,101 +103,96 @@ struct FloatingOverlayMenuView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .onAppear {
+                    // Căn chỉnh vị trí mặc định nằm sát mép phải màn hình
+                    let initialX = geo.size.width > 0 ? (geo.size.width - buttonSize / 2 - edgePadding) : (UIScreen.main.bounds.width - buttonSize / 2 - edgePadding)
+                    let initialY = geo.size.height > 0 ? (geo.size.height * 0.42) : (UIScreen.main.bounds.height * 0.42)
+                    position = CGPoint(x: initialX, y: initialY)
                     resetIdleTimer()
                 }
             }
         }
     }
     
-    // MARK: - Nút Tròn Nổi Kiểu AssistiveTouch (Floating Ball)
+    // MARK: - Nút Tròn Nổi Kiểu AssistiveTouch (Pure View, Zero Touch Lag)
     private func floatingAssistiveBall(screenSize: CGSize) -> some View {
         let isAntiBanOn = antiBanService.isRunning(game.targetGame)
         let hasActiveHack = !appliedAimIDs.isEmpty
         
-        return Button {
-            if !isDragging {
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
-                    isExpanded = true
+        return ZStack {
+            // Vòng sáng Glow bên ngoài khi đang hoạt động
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            isAntiBanOn ? Color.green.opacity(0.6) : AppTheme.accent.opacity(0.6),
+                            Color.clear
+                        ],
+                        center: .center,
+                        startRadius: 14,
+                        endRadius: 36
+                    )
+                )
+                .frame(width: buttonSize + 18, height: buttonSize + 18)
+                .opacity(isDragging ? 1.0 : (isIdle ? 0.3 : 0.85))
+            
+            // Vỏ ngoài AssistiveTouch mờ ảo
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.32),
+                            Color.white.opacity(0.08)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: buttonSize, height: buttonSize)
+                .background(
+                    Circle()
+                        .fill(Color.black.opacity(0.65))
+                        .blur(radius: 2)
+                )
+            
+            // Lõi nút tròn chuyển màu
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: isAntiBanOn
+                            ? [Color(red: 0.12, green: 0.88, blue: 0.50), Color(red: 0.04, green: 0.62, blue: 0.32)]
+                            : [AppTheme.gradientStart, AppTheme.gradientEnd],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: buttonSize - 10, height: buttonSize - 10)
+                .overlay(
+                    Circle()
+                        .strokeBorder(Color.white.opacity(0.6), lineWidth: 1.2)
+                )
+                .shadow(color: (isAntiBanOn ? Color.green : AppTheme.accent).opacity(0.6), radius: 8, y: 3)
+            
+            // Icon bên trong
+            VStack(spacing: 2) {
+                Image(systemName: "scope")
+                    .font(.system(size: 19, weight: .black))
+                    .foregroundStyle(.white)
+                
+                if isAntiBanOn {
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 4, height: 4)
                 }
             }
-        } label: {
-            ZStack {
-                // Vòng sáng Glow bên ngoài khi đang hoạt động
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [
-                                isAntiBanOn ? Color.green.opacity(0.55) : AppTheme.accent.opacity(0.55),
-                                Color.clear
-                            ],
-                            center: .center,
-                            startRadius: 14,
-                            endRadius: 36
-                        )
-                    )
-                    .frame(width: buttonSize + 18, height: buttonSize + 18)
-                    .opacity(isDragging ? 1.0 : (isIdle ? 0.3 : 0.85))
-                
-                // Vỏ ngoài AssistiveTouch mờ ảo
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(0.28),
-                                Color.white.opacity(0.08)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: buttonSize, height: buttonSize)
-                    .background(
-                        Circle()
-                            .fill(Color.black.opacity(0.65))
-                            .blur(radius: 2)
-                    )
-                
-                // Lõi nút tròn chuyển màu
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: isAntiBanOn
-                                ? [Color(red: 0.12, green: 0.88, blue: 0.50), Color(red: 0.04, green: 0.62, blue: 0.32)]
-                                : [AppTheme.gradientStart, AppTheme.gradientEnd],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: buttonSize - 10, height: buttonSize - 10)
-                    .overlay(
-                        Circle()
-                            .strokeBorder(Color.white.opacity(0.6), lineWidth: 1.2)
-                    )
-                    .shadow(color: (isAntiBanOn ? Color.green : AppTheme.accent).opacity(0.6), radius: 8, y: 3)
-                
-                // Icon bên trong
-                VStack(spacing: 2) {
-                    Image(systemName: "scope")
-                        .font(.system(size: 19, weight: .black))
-                        .foregroundStyle(.white)
-                    
-                    if isAntiBanOn {
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: 4, height: 4)
-                    }
-                }
-            }
-            .opacity(isDragging ? 1.0 : (isIdle ? 0.48 : 0.96))
-            .scaleEffect(isDragging ? 1.10 : 1.0)
-            .animation(.spring(response: 0.28, dampingFraction: 0.72), value: isDragging)
-            .animation(.easeInOut(duration: 0.4), value: isIdle)
         }
-        .buttonStyle(.plain)
+        .contentShape(Circle())
+        .opacity(isDragging ? 1.0 : (isIdle ? 0.48 : 0.96))
+        .scaleEffect(isDragging ? 1.12 : 1.0)
+        .animation(.spring(response: 0.22, dampingFraction: 0.7), value: isDragging)
+        .animation(.easeInOut(duration: 0.35), value: isIdle)
     }
     
-    // MARK: - Xử lý vật lý nhả tay và hít mép (AssistiveTouch Physics)
+    // MARK: - Xử lý vật lý nhả tay và hít mép (AssistiveTouch Edge Snapping)
     private func handleDragEnd(value: DragGesture.Value, in size: CGSize) {
         let currentTargetX = position.x + value.translation.width
         let currentTargetY = position.y + value.translation.height
@@ -444,11 +459,15 @@ struct FloatingOverlayMenuView: View {
     // MARK: - Bounds Calculation
     private func clampedX(_ x: CGFloat, in size: CGSize) -> CGFloat {
         let radius = buttonSize / 2
-        return min(max(radius + edgePadding, x), size.width - radius - edgePadding)
+        let minX = radius + edgePadding
+        let maxX = max(minX, size.width - radius - edgePadding)
+        return min(max(minX, x), maxX)
     }
     
     private func clampedY(_ y: CGFloat, in size: CGSize) -> CGFloat {
         let radius = buttonSize / 2
-        return min(max(radius + topSafeAreaMargin, y), size.height - radius - bottomSafeAreaMargin)
+        let minY = radius + topSafeAreaMargin
+        let maxY = max(minY, size.height - radius - bottomSafeAreaMargin)
+        return min(max(minY, y), maxY)
     }
 }

@@ -464,7 +464,7 @@ struct GameUnifiedHackDetailView: View {
 
     @State private var selectedSubTab: HackSubCategory = .aim
     @ObservedObject private var antiBanService = FFAntiBanService.shared
-    @AppStorage("floating_overlay_enabled") private var isOverlayEnabled = false
+    @AppStorage("floating_overlay_enabled") private var isOverlayEnabled = true
 
     // Data catalogs for each sub-tab
     @State private var aimsByCategory: [HackSubCategory: [BundledAim]] = [:]
