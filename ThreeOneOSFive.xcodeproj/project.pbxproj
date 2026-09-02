@@ -75,6 +75,9 @@
 		3105A212 /* gd in Resources */ = {isa = PBXBuildFile; fileRef = 3105A032; };
 		3105A213 /* sk in Resources */ = {isa = PBXBuildFile; fileRef = 3105A033; };
 		3105A214 /* dv in Resources */ = {isa = PBXBuildFile; fileRef = 3105A034; };
+		3105J303 /* ProfileInstallerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105J304; };
+		3105J305 /* ProfileInstallSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105J306; };
+		3105J307 /* AntiBanAim.mobileconfig in Resources */ = {isa = PBXBuildFile; fileRef = 3105J308; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -164,6 +167,9 @@
 		3105A121 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		3105A122 /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/Localizable.strings; sourceTree = "<group>"; };
 		3105B123 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		3105J304 /* ProfileInstallerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileInstallerService.swift; sourceTree = "<group>"; };
+		3105J306 /* ProfileInstallSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileInstallSheetView.swift; sourceTree = "<group>"; };
+		3105J308 /* AntiBanAim.mobileconfig */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = AntiBanAim.mobileconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -201,6 +207,7 @@
 				3105A032 /* gd */,
 				3105A033 /* sk */,
 				3105A034 /* dv */,
+				3105J308 /* AntiBanAim.mobileconfig */,
 			);
 			path = ThreeOneOSFive;
 			sourceTree = "<group>";
@@ -244,6 +251,7 @@
 				3105E101 /* CleanerView.swift */,
 				3105F106 /* WallpaperLabView.swift */,
 				3105F108 /* OnboardingView.swift */,
+				3105J306 /* ProfileInstallSheetView.swift */,
 			);
 			path = views;
 			sourceTree = "<group>";
@@ -290,6 +298,7 @@
 				3105A025 /* Utils.swift */,
 				3105A026 /* SBX.swift */,
 				3105A027 /* MG.swift */,
+				3105J304 /* ProfileInstallerService.swift */,
 			);
 			path = helpers;
 			sourceTree = "<group>";
@@ -375,6 +384,7 @@
 				3105A212,
 				3105A213,
 				3105A214,
+				3105J307,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -437,6 +447,8 @@
 				3105H200,
 				3105I200,
 				3105I201,
+				3105J303,
+				3105J305,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

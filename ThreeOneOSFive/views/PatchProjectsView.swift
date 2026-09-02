@@ -239,6 +239,7 @@ enum HackSubCategory: String, CaseIterable, Identifiable {
 struct PatchProjectsView: View {
     @State private var installedGames: [String: Bool] = [:]
     @State private var showSettings = false
+    @State private var showProfileSheet = false
     @ObservedObject private var antiBanService = FFAntiBanService.shared
 
     var body: some View {
@@ -247,6 +248,9 @@ struct PatchProjectsView: View {
                 VStack(spacing: 20) {
                     // Header Banner
                     headerCard
+
+                    // Card Cấu hình DNS Anti-Ban HZZ Profile (.mobileconfig)
+                    profileConfigCard
 
                     // Danh sách 2 Game: Free Fire & Free Fire MAX
                     VStack(alignment: .leading, spacing: 14) {
@@ -292,10 +296,73 @@ struct PatchProjectsView: View {
             .sheet(isPresented: $showSettings) {
                 SettingsView()
             }
+            .sheet(isPresented: $showProfileSheet) {
+                ProfileInstallSheetView()
+            }
             .onAppear {
                 checkInstalledGames()
             }
         }
+    }
+
+    private var profileConfigCard: some View {
+        Button {
+            showProfileSheet = true
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color(red: 0.1, green: 0.6, blue: 1.0), Color(red: 0.0, green: 0.3, blue: 0.85)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 46, height: 46)
+                    
+                    Image(systemName: "shield.lefthalf.filled")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(.white)
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text("Cấu hình DNS AntiBan HZZ")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(.primary)
+                        
+                        Text("DoH Profile")
+                            .font(.system(size: 9, weight: .black))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(Color.blue))
+                    }
+
+                    Text("Hồ sơ mã hóa NextDNS chặn quét gian lận toàn máy")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(Color(uiColor: .secondarySystemGroupedBackground))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     private var headerCard: some View {

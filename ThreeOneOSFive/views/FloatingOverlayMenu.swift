@@ -23,6 +23,7 @@ struct FloatingOverlayMenuView: View {
     let isRestoringAll: Bool
     
     @ObservedObject private var antiBanService = FFAntiBanService.shared
+    @ObservedObject private var profileInstaller = ProfileInstallerService.shared
     
     @State private var isExpanded: Bool = false
     @State private var selectedTab: HackSubCategory = .aim
@@ -113,6 +114,9 @@ struct FloatingOverlayMenuView: View {
                     // Cập nhật vị trí khi màn hình thay đổi
                     clampPosition(in: newSize)
                 }
+            }
+            .sheet(isPresented: $profileInstaller.showGuideSheet) {
+                ProfileInstallSheetView()
             }
         }
     }
@@ -355,6 +359,28 @@ struct FloatingOverlayMenuView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
             .background(Color.white.opacity(0.06))
+            
+            // Nút cài đặt Profile DNS AntiBan HZZ nhanh
+            Button {
+                ProfileInstallerService.shared.startAndInstall()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.down.doc.fill")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(Color.cyan)
+                    Text("Cài Profile DNS HZZ")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.9))
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.4))
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 7)
+                .background(Color.white.opacity(0.04))
+            }
+            .buttonStyle(.plain)
             
             // Tab Selector trong Overlay
             HStack(spacing: 6) {
