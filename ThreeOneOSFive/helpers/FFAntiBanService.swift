@@ -217,14 +217,15 @@ final class FFAntiBanService: ObservableObject {
                     lastNormalizedTime = Date()
                     let resultOrError: Swift.Result<Result, Error> = await Task.detached(priority: .userInitiated) {
                         Swift.Result {
-                            try FFAntiBanService.normalizeTimestamps(bundleID: bundleID)
+                            FFAntiBanService.purgeTelemetryAndAntiCheatLogs(bundleID: bundleID)
+                            return try FFAntiBanService.normalizeTimestamps(bundleID: bundleID)
                         }
                     }.value
 
                     guard !Task.isCancelled, self.runningGames.contains(game) else { break }
                     switch resultOrError {
                     case .success(let result):
-                        self.resultTexts[game] = "Đã quét & chuẩn hóa \(result.filesNormalized) file"
+                        self.resultTexts[game] = "Đã quét & chuẩn hóa \(result.filesNormalized) file (Khóa Log & Mốc giờ)"
                     case .failure(let error):
                         self.errorTexts[game] = error.localizedDescription
                     }
@@ -233,6 +234,39 @@ final class FFAntiBanService: ObservableObject {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
             }
         }
+    }
+
+    // Xóa sạch và chặn các file telemetry / crash report / cheat log của game
+    @discardableResult
+    nonisolated static func purgeTelemetryAndAntiCheatLogs(bundleID: String = antiBanBundleID) -> Int {
+        guard let containerPath = ContainerStore.resolveAppContainerPath(bundleID: bundleID) else {
+            return 0
+        }
+        let fm = FileManager.default
+        let containerURL = URL(fileURLWithPath: containerPath, isDirectory: true)
+        let logPatterns = ["tdlog", "telemetry", "crashlytics", "adjust", "appsflyer", "report", "anticheat", "audit", ".log"]
+
+        let searchDirs = [
+            containerURL.appendingPathComponent("Library/Caches", isDirectory: true),
+            containerURL.appendingPathComponent("tmp", isDirectory: true),
+            containerURL.appendingPathComponent("Documents", isDirectory: true)
+        ]
+
+        var purgedCount = 0
+        for dir in searchDirs {
+            var isDir: ObjCBool = false
+            guard fm.fileExists(atPath: dir.path, isDirectory: &isDir), isDir.boolValue else { continue }
+            guard let enumerator = fm.enumerator(at: dir, includingPropertiesForKeys: nil) else { continue }
+            while let item = enumerator.nextObject() as? URL {
+                let name = item.lastPathComponent.lowercased()
+                if logPatterns.contains(where: { name.contains($0) }) {
+                    if (try? fm.removeItem(at: item)) != nil {
+                        purgedCount += 1
+                    }
+                }
+            }
+        }
+        return purgedCount
     }
 
     // Dừng chạy ngầm và xóa khỏi UserDefaults
@@ -252,6 +286,35 @@ final class FFAntiBanService: ObservableObject {
             stopBackgroundAntiBan(for: game)
         } else {
             startBackgroundAntiBan(for: game)
+        }
+    }
+
+    // Kiểm tra xem có bất kỳ game nào đang được bảo vệ ngầm không
+    var isAnyRunning: Bool {
+        !runningGames.isEmpty
+    }
+
+    // Tổng thời gian chạy ngầm lớn nhất của các game đang bật
+    var maxRunningTimeString: String {
+        let maxSec = runningGames.compactMap { elapsedSeconds[$0] }.max() ?? 0
+        return formattedTime(maxSec)
+    }
+
+    // Bật/Tắt AntiBan AimLock HZZ toàn diện cho tất cả game Free Fire trên máy
+    func toggleAllInstalledGames() {
+        if isAnyRunning {
+            for game in TargetGame.allCases {
+                stopBackgroundAntiBan(for: game)
+            }
+        } else {
+            for game in TargetGame.allCases {
+                if Self.isInstalled(bundleID: game.rawValue) {
+                    startBackgroundAntiBan(for: game)
+                }
+            }
+            if runningGames.isEmpty {
+                startBackgroundAntiBan(for: .freeFire)
+            }
         }
     }
 

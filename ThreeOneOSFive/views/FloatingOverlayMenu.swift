@@ -328,17 +328,17 @@ struct FloatingOverlayMenuView: View {
             Divider()
                 .background(Color.white.opacity(0.12))
             
-            // Thanh gạt nhanh Anti-Ban trong Overlay
+            // Thanh gạt nhanh AntiBan AimLock HZZ trực tiếp trong Overlay
             HStack(spacing: 12) {
                 Image(systemName: isAntiBanOn ? "shield.fill" : "shield.slash")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(isAntiBanOn ? Color.green : Color.white.opacity(0.6))
                 
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("Anti-Ban Cực Cao")
+                    Text("AntiBan AimLock HZZ")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(.white)
-                    Text(isAntiBanOn ? "Đang bảo vệ" : "Đang tắt")
+                    Text(isAntiBanOn ? "🟢 Đang bảo vệ (\(antiBanService.elapsedTimeString(for: game.targetGame)))" : "Đang tắt — Bấm để bảo vệ trực tiếp")
                         .font(.system(size: 11))
                         .foregroundStyle(isAntiBanOn ? Color.green : Color.white.opacity(0.5))
                 }

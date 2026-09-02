@@ -306,63 +306,89 @@ struct PatchProjectsView: View {
     }
 
     private var profileConfigCard: some View {
-        Button {
-            showProfileSheet = true
-        } label: {
-            HStack(spacing: 14) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(red: 0.1, green: 0.6, blue: 1.0), Color(red: 0.0, green: 0.3, blue: 0.85)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
+        let isRunning = antiBanService.isAnyRunning
+        let timeStr = antiBanService.maxRunningTimeString
+
+        return HStack(spacing: 14) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: isRunning
+                                ? [Color(red: 0.05, green: 0.85, blue: 0.45), Color(red: 0.02, green: 0.55, blue: 0.28)]
+                                : [Color(red: 0.1, green: 0.55, blue: 0.95), Color(red: 0.05, green: 0.28, blue: 0.75)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
                         )
-                        .frame(width: 46, height: 46)
+                    )
+                    .frame(width: 48, height: 48)
+                
+                Image(systemName: isRunning ? "shield.fill" : "shield.lefthalf.filled")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Text("AntiBan AimLock HZZ")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(.primary)
                     
-                    Image(systemName: "shield.lefthalf.filled")
-                        .font(.system(size: 20, weight: .bold))
+                    Text(isRunning ? "ACTIVE" : "DIRECT")
+                        .font(.system(size: 9, weight: .black))
                         .foregroundStyle(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(isRunning ? Color.green : Color.blue))
                 }
 
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        Text("Cấu hình DNS AntiBan HZZ")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(.primary)
-                        
-                        Text("DoH Profile")
-                            .font(.system(size: 9, weight: .black))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Capsule().fill(Color.blue))
-                    }
-
-                    Text("Hồ sơ mã hóa NextDNS chặn quét gian lận toàn máy")
+                if isRunning {
+                    Text("🟢 Đang bảo vệ trực tiếp (\(timeStr))")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Color.green)
+                        .lineLimit(1)
+                } else {
+                    Text("Chặn file log báo cáo & chuẩn hóa mốc giờ trực tiếp")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.tertiary)
             }
-            .padding(14)
-            .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(Color(uiColor: .secondarySystemGroupedBackground))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
-            )
+
+            Spacer()
+
+            // Nút mở bảng hướng dẫn / profile mobileconfig (Tùy chọn)
+            Button {
+                showProfileSheet = true
+            } label: {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 18))
+                    .foregroundStyle(.secondary)
+                    .padding(6)
+            }
+            .buttonStyle(.plain)
+
+            // Nút gạt BẬT/TẮT trực tiếp trong app
+            Toggle("", isOn: Binding(
+                get: { antiBanService.isAnyRunning },
+                set: { _ in
+                    antiBanService.toggleAllInstalledGames()
+                    UISelectionFeedbackGenerator().selectionChanged()
+                }
+            ))
+            .labelsHidden()
+            .tint(.green)
+            .scaleEffect(0.9)
         }
-        .buttonStyle(.plain)
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color(uiColor: .secondarySystemGroupedBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(isRunning ? Color.green.opacity(0.3) : Color.white.opacity(0.08), lineWidth: 1)
+        )
     }
 
     private var headerCard: some View {
